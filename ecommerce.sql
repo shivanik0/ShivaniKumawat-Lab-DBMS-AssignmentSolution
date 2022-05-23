@@ -127,20 +127,22 @@ on product.PRO_ID=supplier_pricing.PRO_ID WHERE `order`.ORD_DATE>"2021-10-05";
 
 SELECT CUS_NAME,CUS_GENDER FROM customer WHERE CUS_NAME LIKE "A%" OR CUS_NAME LIKE "%A";
 
-DELIMITER //
-
 CREATE PROCEDURE supplierRating()
 BEGIN
-	select supplier_pricing.SUPP_ID,supplier.SUPP_NAME,avg(RAT_STARS) as rating FROM supplier, supplier_pricing,rating
-    GROUP BY ORD_ID
+	select SUPP_ID,SUPP_NAME,rating,
 	CASE
-	when rating=5 then 'Excellent Service'
-	when rating>4 then 'Good Service'
-	when rating>2 then 'Average Service'
-	ELSE 'POOR Service'
-	END As Type_Of_Service
-	From supplier,
-END 
-
+		when rating=5 then 'Excellent Service'
+		when rating>4 then 'Good Service'
+		when rating>2 then 'Average Service'
+		ELSE 'POOR Service'
+		END As Type_Of_Service
+	From
+	(SELECT supplier.SUPP_ID,supplier.SUPP_NAME,avg(B.RAT_RATSTARS) as rating FROM supplier inner join
+	(SELECT SUPP_ID,A.ORD_ID,A.RAT_RATSTARS FROM supplier_pricing inner join
+	(SELECT rating.ORD_ID,RAT_RATSTARS,PRICING_ID FROM rating,`order` WHERE rating.ORD_ID=`order`.ORD_ID)
+	As A WHERE supplier_pricing.PRICING_ID=A.pricing_ID)
+	As B WHERE supplier.SUPP_ID=B.SUPP_ID GROUP BY SUPP_ID)
+	As C
+END
 DELIMITER ;
 
